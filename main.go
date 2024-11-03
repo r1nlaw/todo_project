@@ -1,8 +1,17 @@
 package main
 
-import "github.com/gin-gonic/gin"
+import (
+	"todo_project/server.go"
+
+	"github.com/gin-gonic/gin"
+)
+
+func init() {
+	server.InitServer() // Инициализируем сервер
+}
 
 func main() {
+	server.StartServer() // Запускаем сервер
 	// Создаем новый роутер по умолчанию в GIN
 	router := gin.Default()
 	// Регистрируем обработчик GET-запроса /ping
