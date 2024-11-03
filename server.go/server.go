@@ -7,5 +7,5 @@ func InitServer() {
 
 func StartServer() {
 	// Инициализация роутеров
-	// Запуск сервера
+	InitRoutes()
 }
