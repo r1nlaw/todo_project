@@ -2,6 +2,7 @@ package server
 
 import (
 	"log"
+	"todo_project/database"
 	"todo_project/envs"
 )
 
@@ -15,6 +16,12 @@ func InitServer() {
 		log.Println("Инициализация ENV прошла успешно")
 	}
 	// Инициализация базы данных
+	errDatabase := database.InitDatabase()
+	if errDatabase != nil {
+		log.Fatal("Ошибка подключения к базе данных: ", errDatabase)
+	} else {
+		log.Println("Успешное подключение к базе данных")
+	}
 }
 
 func StartServer() {

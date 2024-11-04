@@ -18,8 +18,7 @@ var MongoClient *mongo.Client
 func InitDatabase() error {
 	env := &envs.ServerEnvs
 	// формирование URI для подключения к MongoDB.
-	mongoURI := fmt.Sprintf("mongodb://%s:%s@%s:%s", env.MONGO_INITDB_ROOT_USERNAME,
-		env.MONGO_INITDB_ROOT_PASSWORD, env.MONGO_INITDB_HOST, env.MONGO_INITDB_PORT)
+	mongoURI := fmt.Sprintf("mongodb://%s:%s@%s:%s", env.MONGO_INITDB_ROOT_USERNAME, env.MONGO_INITDB_ROOT_PASSWORD, env.MONGO_INITDB_HOST, env.MONGO_INITDB_PORT)
 	log.Println("URI: " + mongoURI)
 	// Создаем новый контекст с таймаутом и предусматриваем его корректное завершение.
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
