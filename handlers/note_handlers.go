@@ -45,8 +45,55 @@ func DeleteNoteHandler(ctx *gin.Context) {
 
 }
 
+// Обработка запроса для редактирования заметки по ID
 func UpdateNoteHandler(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, "UpdateNoteHandler")
+	authorID := 1
+	// Получаем ID заметки из параметра запроса
+	id := ctx.Param("id")
+
+	var note models.Note
+	if err := ctx.ShouldBindJSON(&note); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "Неверные данные",
+		})
+		return
+	}
+
+	// Получаем коллекцию "notes"
+	collection := database.MongoClient.Database("admin").Collection(fmt.Sprintf("notes/%d", authorID))
+
+	// Создаем динамический $set
+	updateFields := bson.M{}
+	// Проверяем, было ли передано имя заметки
+	if note.Name != nil {
+		updateFields["name"] = note.Name
+	}
+	// Проверяем, было ли передан контент заметки
+	if note.Content != nil {
+		updateFields["content"] = note.Content
+	}
+	// Создаем данные для обновления с помощью $set updateFields
+	update := bson.M{"$set": updateFields}
+
+	// Создаем фильтр для поиска по ID
+	filter := bson.M{"id": id}
+
+	// Обновляем заметку в коллекции по фильтру
+	result, err := collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// Проверяем, обновлена ли заметка
+	if result.MatchedCount == 0 {
+		ctx.JSON(http.StatusOK, "Заметка не найдена")
+	} else {
+		ctx.JSON(http.StatusOK, "Заметка успешно отредактирована")
+	}
+
 }
 
 // Обработка запроса для создания заметки
