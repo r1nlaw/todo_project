@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func GetNoteHandler(ctx *gin.Context) {
@@ -18,8 +19,30 @@ func GetAllNotesHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, "GetAllNotesHandler")
 }
 
+// Обработка запроса для удаления заметки по ID
 func DeleteNoteHandler(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, "DeleteNoteHandler")
+	// Получаем ID заметки из параметра запроса
+	id := ctx.Param("id")
+
+	// Получаем коллекцию "notes"
+	collection := database.MongoClient.Database("admin").Collection(fmt.Sprintf("notes/%d", 1))
+
+	// Создаем фильтр для поиска по ID
+	filter := bson.M{"id": id}
+
+	// Удаляем заметку из коллекции по фильтру
+	result, err := collection.DeleteOne(ctx, filter)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	// Проверяем удалена ли заметка
+	if result.DeletedCount == 0 {
+		ctx.JSON(http.StatusOK, "Заметка не найдена")
+	} else {
+		ctx.JSON(http.StatusOK, "Заметка успешно удалена")
+	}
+
 }
 
 func UpdateNoteHandler(ctx *gin.Context) {
