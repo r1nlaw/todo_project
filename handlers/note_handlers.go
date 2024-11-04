@@ -11,8 +11,27 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
+// Обработка запроса для получения заметки по ID
 func GetNoteHandler(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, "GetNoteHandler")
+	authorId := 1
+	// Получаем ID заметки из параметра запроса
+	id := ctx.Param("id")
+	// Получаем коллекцию "notes"
+	collection := database.MongoClient.Database("admin").Collection(fmt.Sprintf("notes/%d", authorId))
+
+	// Объявляем переменную для хранения заметки
+	var note models.Note
+	// Создаем фильтр для поиска по ID
+	filter := bson.M{"id": id}
+	// Ищем заметку в коллекции,
+	// если она есть возращаем ее иначе сообщение об ошибке
+	errFind := collection.FindOne(ctx, filter).Decode(&note)
+	if errFind != nil {
+		ctx.JSON(http.StatusOK, "Заметка не найдена")
+	}
+	// Возращаем заметку
+	ctx.JSON(http.StatusOK, &note)
+
 }
 
 func GetAllNotesHandler(ctx *gin.Context) {
