@@ -11,12 +11,73 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
+// Обработка запроса для получения заметки по ID
 func GetNoteHandler(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, "GetNoteHandler")
+	authorId := 1
+	// Получаем ID заметки из параметра запроса
+	id := ctx.Param("id")
+	// Получаем коллекцию "notes"
+	collection := database.MongoClient.Database("admin").Collection(fmt.Sprintf("notes/%d", authorId))
+
+	// Объявляем переменную для хранения заметки
+	var note models.Note
+	// Создаем фильтр для поиска по ID
+	filter := bson.M{"id": id}
+	// Ищем заметку в коллекции,
+	// если она есть возращаем ее иначе сообщение об ошибке
+	errFind := collection.FindOne(ctx, filter).Decode(&note)
+	if errFind != nil {
+		ctx.JSON(http.StatusOK, "Заметка не найдена")
+	}
+	// Возращаем заметку
+	ctx.JSON(http.StatusOK, &note)
+
 }
 
 func GetAllNotesHandler(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, "GetAllNotesHandler")
+	authorId := 1
+	// Объявляем список заметок
+	var notes []models.Note
+
+	// Получаем коллекцию "notes"
+	collection := database.MongoClient.Database("admin").Collection(fmt.Sprintf("notes/%d", authorId))
+
+	// Поиск документов без фильтров для получения всех заметок
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	// Закрытие курсора, при завершении работы функции
+	defer cursor.Close(ctx)
+	// Итерация по курсору и декодирование документов в заметки
+	for cursor.Next(ctx) {
+		var note models.Note
+		err := cursor.Decode(&note)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		notes = append(notes, note)
+	}
+	// Проверка на ошибки после итерации
+	if err := cursor.Err(); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	// Проверка на наличие заметок
+	if len(notes) == 0 {
+		ctx.JSON(http.StatusOK, "Заметок не найдено")
+
+	} else {
+		ctx.JSON(http.StatusOK, notes)
+	}
 }
 
 // Обработка запроса для удаления заметки по ID

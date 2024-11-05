@@ -16,6 +16,8 @@ type Envs struct {
 	MONGO_INITDB_PORT          string
 	MONGO_INITDB_HOST          string
 	NOTES_PORT                 string
+	REDIS_PORT                 string
+	REDIS_HOST                 string
 }
 
 // Инициализация значений ENV
@@ -31,5 +33,8 @@ func LoadEnvs() error {
 	ServerEnvs.MONGO_INITDB_ROOT_PASSWORD = os.Getenv("MONGO_INITDB_ROOT_PASSWORD")
 	ServerEnvs.MONGO_INITDB_PORT = os.Getenv("MONGO_INITDB_PORT")
 	ServerEnvs.MONGO_INITDB_HOST = os.Getenv("MONGO_INITDB_HOST")
+
+	ServerEnvs.REDIS_HOST = os.Getenv("REDIS_HOST")
+	ServerEnvs.REDIS_PORT = os.Getenv("REDIS_PORT")
 	return nil
 }
