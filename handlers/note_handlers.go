@@ -1,12 +1,16 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"time"
 	"todo_project/database"
 	"todo_project/models"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -39,45 +43,79 @@ func GetAllNotesHandler(ctx *gin.Context) {
 	// Объявляем список заметок
 	var notes []models.Note
 
-	// Получаем коллекцию "notes"
-	collection := database.MongoClient.Database("admin").Collection(fmt.Sprintf("notes/%d", authorId))
+	// Проверяем, есть ли в кэше данные
+	val, err := database.RedisClient.Get(fmt.Sprintf("notes/%d", authorId)).Result()
+	if err == redis.Nil {
+		// Получаем коллекцию "notes"
+		collection := database.MongoClient.Database("admin").Collection(fmt.Sprintf("notes/%d", authorId))
 
-	// Поиск документов без фильтров для получения всех заметок
-	cursor, err := collection.Find(ctx, bson.M{})
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-	// Закрытие курсора, при завершении работы функции
-	defer cursor.Close(ctx)
-	// Итерация по курсору и декодирование документов в заметки
-	for cursor.Next(ctx) {
-		var note models.Note
-		err := cursor.Decode(&note)
+		// Поиск документов без фильтров для получения всех заметок
+		cursor, err := collection.Find(ctx, bson.M{})
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
 			})
 			return
 		}
-		notes = append(notes, note)
-	}
-	// Проверка на ошибки после итерации
-	if err := cursor.Err(); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-	// Проверка на наличие заметок
-	if len(notes) == 0 {
-		ctx.JSON(http.StatusOK, "Заметок не найдено")
+		// Закрытие курсора, при завершении работы функции
+		defer cursor.Close(ctx)
+		// Итерация по курсору и декодирование документов в заметки
+		for cursor.Next(ctx) {
+			var note models.Note
+			err := cursor.Decode(&note)
+			if err != nil {
+				ctx.JSON(http.StatusInternalServerError, gin.H{
+					"error": err.Error(),
+				})
+				return
+			}
+			notes = append(notes, note)
+		}
+		// Проверка на ошибки после итерации
+		if err := cursor.Err(); err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		// Проверка на наличие заметок
+		if len(notes) == 0 {
+			ctx.JSON(http.StatusOK, "Заметок не найдено")
+
+		} else {
+			// Запись в кэш
+			recordCacheToRedis(notes, authorId)
+			// Возвращаем список заметок
+			ctx.JSON(http.StatusOK, notes)
+		}
 
 	} else {
-		ctx.JSON(http.StatusOK, notes)
+		getFormCache(val, ctx)
 	}
+
+}
+func recordCacheToRedis(notes []models.Note, authorId int) {
+	// Сериализуем список заметок в JSON
+	notesJSON, err := json.Marshal(notes)
+	// Обрабатываем ошибку или продолжаем без кэширования
+	if err != nil {
+		log.Printf("Ошибка при сериализации заметок: %v", err)
+	} else {
+		// Сохраняем сериализованные данные в Redis
+		// Срок действия ключа - 30 минут
+		err := database.RedisClient.Set(fmt.Sprintf("notes/%d", authorId), string(notesJSON), 1440*time.Minute).Err()
+		// Обрабатываем ошибку или продолжаем без кэширования
+		if err != nil {
+			log.Printf("Ошибка при сохранении в Redis: %v", err)
+		}
+	}
+}
+
+func getFormCache(val string, ctx *gin.Context) {
+	log.Printf("Кэш найден, загружаем из Кэша")
+	notes := make([]models.Note, 0)
+	json.Unmarshal([]byte(val), &notes)
+	ctx.JSON(http.StatusOK, notes)
 }
 
 // Обработка запроса для удаления заметки по ID
