@@ -43,7 +43,38 @@ services:
     # передачи данных между контейнерами
     networks:
       - server_net
-
+  # Сервис для управлением заметками 
+  notes:
+    # Название контейнера
+    container_name: notes 
+    # Папка контейнера для сборки
+    build: ./notes
+    # Указывает, что контейнер должен ждать запуск контейнеров
+    # Так как необходимо, чтобы MongoDB и Redis были запущены 
+    depends_on:
+      - db_notes 
+      - redis_notes
+    # Объявляем внутреннюю сеть докера, для 
+    # передачи данных между контейнерами
+    networks:
+      - server_net
+    # Порты которые будут использоваться в контейнере
+    ports:
+      - ${NOTES_PORT}:${NOTES_PORT}
+    # Внешние переменные окружения
+    environment:
+      # Порт который будет использоваться в контейнере
+      NOTES_PORT: ${NOTES_PORT}
+      # Секретный ключ для аутентификации
+      JWT_SECRET: ${JWT_SECRET}
+      # Настройки MongoDB, указываем в контейнере 
+      MONGO_INITDB_HOST: ${MONGO_INITDB_HOST}
+      MONGO_INITDB_PORT: ${MONGO_INITDB_PORT}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      # Настройки Redis, указываем в контейнере
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
 # Конфигурация для хранилища данных
 volumes:
   db_notes_vol: {}
