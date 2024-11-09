@@ -118,8 +118,14 @@ func getFormCache(val string, ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, notes)
 }
 
+func resetCache(val string) {
+	// Удаляем все заметки из кэша т.к. данные в БД поменялись
+	database.RedisClient.Del(val)
+}
+
 // Обработка запроса для удаления заметки по ID
 func DeleteNoteHandler(ctx *gin.Context) {
+	authorID := 1
 	// Получаем ID заметки из параметра запроса
 	id := ctx.Param("id")
 
@@ -139,6 +145,7 @@ func DeleteNoteHandler(ctx *gin.Context) {
 	if result.DeletedCount == 0 {
 		ctx.JSON(http.StatusOK, "Заметка не найдена")
 	} else {
+		resetCache(fmt.Sprintf("notes/%d", authorID))
 		ctx.JSON(http.StatusOK, "Заметка успешно удалена")
 	}
 
@@ -190,6 +197,7 @@ func UpdateNoteHandler(ctx *gin.Context) {
 	if result.MatchedCount == 0 {
 		ctx.JSON(http.StatusOK, "Заметка не найдена")
 	} else {
+		resetCache(fmt.Sprintf("notes/%d", authorID))
 		ctx.JSON(http.StatusOK, "Заметка успешно отредактирована")
 	}
 
@@ -220,6 +228,8 @@ func CreateNoteHandler(ctx *gin.Context) {
 	if errInsert != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": errInsert.Error()})
 	}
+	resetCache(fmt.Sprintf("notes/%d", note.AuthorID))
+
 	// Если ошибок нет, то возвращаем заметку и статус 200
 	ctx.JSON(http.StatusOK, gin.H{
 		"note":    note,
