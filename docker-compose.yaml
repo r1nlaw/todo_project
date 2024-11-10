@@ -75,10 +75,37 @@ services:
       # Настройки Redis, указываем в контейнере
       REDIS_HOST: ${REDIS_HOST}
       REDIS_PORT: ${REDIS_PORT}
+  # БД для сервиса управления пользователями
+  db_auth:
+    # Название контейнера
+    container_name: db_auth 
+    # Значение переменных окружения
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    # Образ контейнера который будет скачан из DockerHub
+    image: postgres:15-alpine
+    # Порты которые будут использоваться в контейнере
+    ports:
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
+    # Меняем порт по умолчанию в Postgres контейнере
+    command: 
+      - 'postgres'
+      - '-c'
+      - 'port=${POSTGRES_PORT}'
+    # Настройки хранилища данных, необходим для сохранения
+    # данных в базе данных при остановке контейнера
+    volumes:
+      - db_auth_vol:/var/lib/postgresql/data
+    # Объявляем внутреннюю сеть докера, для
+    # передачи данных между контейнерами
+    networks:
+      - server_net
 # Конфигурация для хранилища данных
 volumes:
   db_notes_vol: {}
   redis-data: {}
+  db_auth_vol: {}
 
 # Настройки сетей
 networks:
