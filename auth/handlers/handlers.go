@@ -17,5 +17,5 @@ func GetUserHandler(ctx *gin.Context) {
 }
 
 func RegisterUserHandler(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, gin.H{"message": "Регистрация прошла успешно"})
+	registerUserHandler(ctx)
 }
