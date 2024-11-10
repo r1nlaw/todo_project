@@ -4,6 +4,7 @@ import "auth/server"
 
 func init() {
 	server.InitServer()
+
 }
 
 func main() {
