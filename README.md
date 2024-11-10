@@ -8,4 +8,4 @@
   - Postman
   - uuid
   - godotenv
- 
+  - GORM
