@@ -25,7 +25,7 @@ func CheckPasswordHash(password string, hash string) bool {
 	return err == nil
 }
 
-// Функция для генерации JWT-токена
+// Функция для генерации JWT-токена шанс колизии токенов (8.63 * 10^-78)
 func GenerateTokens(userID uint) (models.Tokens, error) {
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": userID,

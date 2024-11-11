@@ -7,7 +7,7 @@ import (
 )
 
 func SignInHandler(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, gin.H{"message": "Авторизация прошла успешно"})
+	signIn(ctx)
 }
 func RefreshTokenHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Токен обновлен"})
