@@ -10,3 +10,4 @@
   - godotenv
   - GORM
   - bcrypt
+  - jwt
