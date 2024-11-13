@@ -4,6 +4,7 @@ import (
 	"auth/envs"
 	"auth/models"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -65,4 +66,30 @@ func ValidateRefreshToken(tokenString string) (uint, error) {
 	} else {
 		return 0, fmt.Errorf("недействительный токен")
 	}
+}
+
+// Извлекаем ID пользователя из JWT AccessToken
+func ExtractUserID(tokenString string) (uint, error) {
+	// Отсечение 'Bearer' из заголовка
+	str := strings.TrimSpace(strings.TrimPrefix(tokenString, "Bearer"))
+
+	// Проверяем что токен валиден
+	token, err := jwt.Parse(str, func(token *jwt.Token) (interface{}, error) {
+		// Убедимся что наш алгоритм соответствует 'jwt.SigningMethodHS256'
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("неожиданный алгоритм подписи: %v", token.Header["alg"])
+		}
+		return []byte(envs.ServerEnvs.JWT_SECRET), nil
+	})
+	if err != nil {
+		return 0, err
+	}
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		userID := claims["user_id"]
+
+		if userIDFloat, ok := userID.(float64); ok {
+			return uint(userIDFloat), nil // Преобразуем float64 в uint
+		}
+	}
+	return 0, fmt.Errorf("Невозможно извлечь user_id из токена")
 }

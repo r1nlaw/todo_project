@@ -13,7 +13,7 @@ func RefreshTokenHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Токен обновлен"})
 }
 func GetUserHandler(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, gin.H{"message": "Получение данных пользователя прошло успешно"})
+	getUser(ctx)
 }
 
 func RegisterUserHandler(ctx *gin.Context) {
