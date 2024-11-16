@@ -18,5 +18,11 @@ func InitRoutes() {
 	// Получение данных пользователя
 	router.GET("/user", handlers.GetUserHandler)
 
+	auth := router.Group("/")
+	auth.Use(handlers.AuthMiddleware())
+	{
+		// Получение данных от пользователя, если пропустит перехватчик
+		router.GET("/user", handlers.GetUserHandler)
+	}
 	router.Run(":9104")
 }
