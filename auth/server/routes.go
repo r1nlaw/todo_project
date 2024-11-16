@@ -1,6 +1,7 @@
 package server
 
 import (
+	"auth/envs"
 	"auth/handlers"
 
 	"github.com/gin-gonic/gin"
@@ -18,11 +19,11 @@ func InitRoutes() {
 	// Получение данных пользователя
 	router.GET("/user", handlers.GetUserHandler)
 
-	auth := router.Group("/")
+	auth := router.Group("/auth")
 	auth.Use(handlers.AuthMiddleware())
 	{
 		// Получение данных от пользователя, если пропустит перехватчик
-		router.GET("/user", handlers.GetUserHandler)
+		auth.GET("/user", handlers.GetUserHandler)
 	}
-	router.Run(":9104")
+	router.Run(":" + envs.ServerEnvs.AUTH_PORT)
 }
